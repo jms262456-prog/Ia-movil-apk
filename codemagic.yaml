@@ -14,7 +14,6 @@ workflows:
 
     trigger:
       branch: main # Dispara el build cada vez que hay un push a la rama 'main'
-      # Puedes añadir tags o pull_requests si lo deseas
 
     scripts:
       - name: Instalar Node.js y pnpm
@@ -22,7 +21,7 @@ workflows:
           npm install -g pnpm
           pnpm install
 
-      - name: Compilar Frontend React (Web)
+      - name: Compilar Frontend React (Web )
         script: |
           cd ai_mobile_frontend
           pnpm run build
@@ -62,7 +61,7 @@ workflows:
           npm install -g pnpm
           pnpm install
 
-      - name: Compilar Frontend React (Web)
+      - name: Compilar Frontend React (Web )
         script: |
           cd ai_mobile_frontend
           pnpm run build
@@ -96,5 +95,3 @@ workflows:
 
     artifacts:
       - ai_mobile_frontend/ios/build/ipa/**/*.ipa # Guarda el IPA generado
-
-
