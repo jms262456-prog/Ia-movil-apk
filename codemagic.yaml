@@ -7,21 +7,15 @@ workflows:
     instance_type: mac_mini_m1 # Puedes usar linux_x2 para Android si no necesitas iOS
     environment:
       vars: {}
-        # Variables de entorno para el build de Android
-        # Si tu frontend necesita alguna variable de entorno en tiempo de compilación,
-        # defínela aquí. Por ejemplo, la URL de tu backend si no usas proxy relativo.
-        # VITE_API_BASE_URL: https://tu-backend.com/api
-
-        trigger:
+    trigger:
       branch: main
-      
     scripts:
       - name: Instalar Node.js y pnpm
         script: |
           npm install -g pnpm
           pnpm install
 
-      - name: Compilar Frontend React (Web )
+      - name: Compilar Frontend React (Web)
         script: |
           cd ai_mobile_frontend
           pnpm run build
@@ -49,19 +43,15 @@ workflows:
     instance_type: mac_mini_m1 # Necesario para builds de iOS
     environment:
       vars: {}
-        # Variables de entorno para el build de iOS
-        # VITE_API_BASE_URL: https://tu-backend.com/api
-
     trigger:
       branch: main
-
     scripts:
       - name: Instalar Node.js y pnpm
         script: |
           npm install -g pnpm
           pnpm install
 
-      - name: Compilar Frontend React (Web )
+      - name: Compilar Frontend React (Web)
         script: |
           cd ai_mobile_frontend
           pnpm run build
