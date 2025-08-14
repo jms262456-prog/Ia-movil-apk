@@ -4,7 +4,7 @@
 workflows:
   android-build:
     name: Build Android App (IA Móvil)
-    instance_type: mac_mini_m1 # Puedes usar linux_x2 para Android si no necesitas iOS
+    instance_type: mac_mini_m1
     environment:
       vars: {}
     trigger:
@@ -33,14 +33,14 @@ workflows:
       - name: Compilar Aplicación Android (APK)
         script: |
           cd ai_mobile_frontend/android
-          ./gradlew assembleRelease # Genera el APK de lanzamiento
+          ./gradlew assembleRelease
 
     artifacts:
-      - ai_mobile_frontend/android/app/build/outputs/**/*.apk # Guarda el APK generado
+      - ai_mobile_frontend/android/app/build/outputs/**/*.apk
 
   ios-build:
     name: Build iOS App (IA Móvil)
-    instance_type: mac_mini_m1 # Necesario para builds de iOS
+    instance_type: mac_mini_m1
     environment:
       vars: {}
     trigger:
@@ -67,21 +67,14 @@ workflows:
           npx cap sync ios
 
       - name: Configurar Certificados de Firma iOS
-        # Codemagic tiene una interfaz para subir tus certificados y perfiles.
-        # Este paso se encargaría de usarlos automáticamente.
-        # Consulta la documentación de Codemagic para la gestión de códigos de firma iOS.
         script: |
-          # Ejemplo: cm-export-certificate <nombre_certificado>
-          # cm-export-provisioning-profile <nombre_perfil>
           echo "Configuración de firma iOS gestionada por Codemagic"
 
       - name: Compilar Aplicación iOS (IPA)
         script: |
           cd ai_mobile_frontend/ios
-          # Asegúrate de que el nombre del esquema y el workspace sean correctos
-          # Generalmente es el nombre de tu proyecto Capacitor
           xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath build/App.xcarchive archive
           xcodebuild -exportArchive -archivePath build/App.xcarchive -exportOptionsPlist exportOptions.plist -exportPath build/ipa
 
     artifacts:
-      - ai_mobile_frontend/ios/build/ipa/**/*.ipa # Guarda el IPA generado
+      - ai_mobile_frontend/ios/build/ipa/**/*.ipa
