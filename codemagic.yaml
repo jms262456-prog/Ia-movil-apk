@@ -12,9 +12,9 @@ workflows:
         # defínela aquí. Por ejemplo, la URL de tu backend si no usas proxy relativo.
         # VITE_API_BASE_URL: https://tu-backend.com/api
 
-    trigger:
-      branch: main # Dispara el build cada vez que hay un push a la rama 'main'
-
+        trigger:
+      branch: main
+      
     scripts:
       - name: Instalar Node.js y pnpm
         script: |
