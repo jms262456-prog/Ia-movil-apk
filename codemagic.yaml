@@ -1,0 +1,100 @@
+# codemagic.yaml
+# Guía de compilación para IA Móvil en Codemagic
+
+workflows:
+  android-build:
+    name: Build Android App (IA Móvil)
+    instance_type: mac_mini_m1 # Puedes usar linux_x2 para Android si no necesitas iOS
+    environment:
+      vars: {}
+        # Variables de entorno para el build de Android
+        # Si tu frontend necesita alguna variable de entorno en tiempo de compilación,
+        # defínela aquí. Por ejemplo, la URL de tu backend si no usas proxy relativo.
+        # VITE_API_BASE_URL: https://tu-backend.com/api
+
+    trigger:
+      branch: main # Dispara el build cada vez que hay un push a la rama 'main'
+      # Puedes añadir tags o pull_requests si lo deseas
+
+    scripts:
+      - name: Instalar Node.js y pnpm
+        script: |
+          npm install -g pnpm
+          pnpm install
+
+      - name: Compilar Frontend React (Web)
+        script: |
+          cd ai_mobile_frontend
+          pnpm run build
+
+      - name: Añadir Plataforma Android a Capacitor
+        script: |
+          cd ai_mobile_frontend
+          npx cap add android
+
+      - name: Sincronizar Proyecto Capacitor
+        script: |
+          cd ai_mobile_frontend
+          npx cap sync android
+
+      - name: Compilar Aplicación Android (APK)
+        script: |
+          cd ai_mobile_frontend/android
+          ./gradlew assembleRelease # Genera el APK de lanzamiento
+
+    artifacts:
+      - ai_mobile_frontend/android/app/build/outputs/**/*.apk # Guarda el APK generado
+
+  ios-build:
+    name: Build iOS App (IA Móvil)
+    instance_type: mac_mini_m1 # Necesario para builds de iOS
+    environment:
+      vars: {}
+        # Variables de entorno para el build de iOS
+        # VITE_API_BASE_URL: https://tu-backend.com/api
+
+    trigger:
+      branch: main
+
+    scripts:
+      - name: Instalar Node.js y pnpm
+        script: |
+          npm install -g pnpm
+          pnpm install
+
+      - name: Compilar Frontend React (Web)
+        script: |
+          cd ai_mobile_frontend
+          pnpm run build
+
+      - name: Añadir Plataforma iOS a Capacitor
+        script: |
+          cd ai_mobile_frontend
+          npx cap add ios
+
+      - name: Sincronizar Proyecto Capacitor
+        script: |
+          cd ai_mobile_frontend
+          npx cap sync ios
+
+      - name: Configurar Certificados de Firma iOS
+        # Codemagic tiene una interfaz para subir tus certificados y perfiles.
+        # Este paso se encargaría de usarlos automáticamente.
+        # Consulta la documentación de Codemagic para la gestión de códigos de firma iOS.
+        script: |
+          # Ejemplo: cm-export-certificate <nombre_certificado>
+          # cm-export-provisioning-profile <nombre_perfil>
+          echo "Configuración de firma iOS gestionada por Codemagic"
+
+      - name: Compilar Aplicación iOS (IPA)
+        script: |
+          cd ai_mobile_frontend/ios
+          # Asegúrate de que el nombre del esquema y el workspace sean correctos
+          # Generalmente es el nombre de tu proyecto Capacitor
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath build/App.xcarchive archive
+          xcodebuild -exportArchive -archivePath build/App.xcarchive -exportOptionsPlist exportOptions.plist -exportPath build/ipa
+
+    artifacts:
+      - ai_mobile_frontend/ios/build/ipa/**/*.ipa # Guarda el IPA generado
+
+
