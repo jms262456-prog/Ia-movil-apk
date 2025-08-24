@@ -4,6 +4,8 @@ import '../providers/app_state.dart';
 import '../providers/voice_provider.dart';
 import '../providers/ai_provider.dart';
 import '../utils/theme.dart';
+import 'protected_mode_auth.dart';
+import 'protected_mode_panel.dart';
 
 class ControlPanel extends StatelessWidget {
   final VoidCallback onClose;
@@ -96,6 +98,11 @@ class ControlPanel extends StatelessWidget {
           
           // Configuración general
           _buildGeneralSection(),
+          
+          const SizedBox(height: 24),
+          
+          // Modo protegido
+          _buildProtectedModeSection(),
           
           const SizedBox(height: 24),
           
@@ -420,63 +427,119 @@ class ControlPanel extends StatelessWidget {
   }
 
   Widget _buildAppInfoSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.info,
-                  color: AppTheme.primaryColor,
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.info,
+                      color: AppTheme.primaryColor,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Información de la Aplicación',
+                      style: AppTheme.titleMedium,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Información de la Aplicación',
-                  style: AppTheme.titleMedium,
-                  fontWeight: FontWeight.bold,
+                
+                const SizedBox(height: 16),
+                
+                _buildInfoItem('Versión', '1.0.0'),
+                _buildInfoItem('Desarrollador', 'Compañera Virtual Team'),
+                _buildInfoItem('Licencia', 'Código Abierto'),
+                
+                const SizedBox(height: 16),
+                
+                // Modo Protegido
+                if (appState.isAuthenticated) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.green),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.security,
+                          color: Colors.green,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Modo Protegido Activo',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Personalidades: ${appState.customPersonalities.length}',
+                                style: TextStyle(
+                                  color: Colors.green[700],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          value: appState.isProtectedMode,
+                          onChanged: (value) {
+                            appState.toggleProtectedMode();
+                          },
+                          activeColor: Colors.green,
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                ],
+                
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // TODO: Implementar exportar datos
+                    },
+                    child: const Text('Exportar Datos'),
+                  ),
+                ),
+                
+                const SizedBox(height: 8),
+                
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // TODO: Implementar resetear aplicación
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Resetear Aplicación'),
+                  ),
                 ),
               ],
             ),
-            
-            const SizedBox(height: 16),
-            
-            _buildInfoItem('Versión', '1.0.0'),
-            _buildInfoItem('Desarrollador', 'Compañera Virtual Team'),
-            _buildInfoItem('Licencia', 'Código Abierto'),
-            
-            const SizedBox(height: 16),
-            
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // TODO: Implementar exportar datos
-                },
-                child: const Text('Exportar Datos'),
-              ),
-            ),
-            
-            const SizedBox(height: 8),
-            
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // TODO: Implementar resetear aplicación
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Resetear Aplicación'),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -504,6 +567,189 @@ class ControlPanel extends StatelessWidget {
           divisions: divisions,
         ),
       ],
+    );
+  }
+
+  Widget _buildProtectedModeSection() {
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      appState.isAuthenticated ? Icons.security : Icons.lock,
+                      color: appState.isAuthenticated ? Colors.green : Colors.orange,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Modo Protegido',
+                      style: AppTheme.titleMedium,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 16),
+                
+                if (appState.isAuthenticated) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.green),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Autenticado',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Personalidades personalizadas: ${appState.customPersonalities.length}',
+                          style: TextStyle(
+                            color: Colors.green[700],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProtectedModePanel(
+                              onClose: null,
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Acceder al Modo Protegido'),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        appState.logoutProtectedMode();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: BorderSide(color: Colors.red),
+                      ),
+                      child: const Text('Cerrar Sesión'),
+                    ),
+                  ),
+                ] else ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.lock,
+                              color: Colors.orange,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'No autenticado',
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Accede para configuraciones avanzadas y personalización sin restricciones',
+                          style: TextStyle(
+                            color: Colors.orange[700],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _showProtectedModeAuth();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Autenticarse'),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showProtectedModeAuth() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ProtectedModeAuth(
+        onSuccess: () {
+          Navigator.pop(context);
+        },
+        onCancel: () {
+          Navigator.pop(context);
+        },
+      ),
     );
   }
 

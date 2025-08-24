@@ -186,6 +186,29 @@ Modifica `lib/utils/theme.dart` para:
 - Ajustar estilos de texto
 - Personalizar componentes UI
 
+## 🔐 Modo Protegido
+
+### Características del Modo Protegido
+- **Acceso protegido por contraseña** (262456)
+- **Auto-actualización sin restricciones** mediante JSON
+- **Personalidades personalizadas** sin límites
+- **Configuración avanzada** con acceso completo
+- **Modo sin censura** para personalización total
+
+### Cómo Acceder
+1. Ve a **Configuración** > **Modo Protegido**
+2. Toca **"Autenticarse"**
+3. Ingresa la contraseña: `262456`
+4. Accede al panel de configuración avanzada
+
+### Funcionalidades Avanzadas
+- **Auto-actualización**: La aplicación puede actualizarse automáticamente
+- **Personalidades personalizadas**: Crear personalidades sin restricciones
+- **Configuración avanzada**: Acceso completo a todas las configuraciones
+- **Modo sin censura**: Personalización total del comportamiento
+
+Para más detalles, consulta: [Guía del Modo Protegido](MODO_PROTEGIDO_GUIA.md)
+
 ## 🚀 Funcionalidades Futuras
 
 ### Próximas Actualizaciones

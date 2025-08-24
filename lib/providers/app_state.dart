@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 
 class AppState extends ChangeNotifier {
   final Logger _logger = Logger();
@@ -25,6 +28,14 @@ class AppState extends ChangeNotifier {
   int _interactionCount = 0;
   List<String> _conversationHistory = [];
   
+  // Sistema de Modo Protegido
+  bool _isProtectedMode = false;
+  bool _isAuthenticated = false;
+  String _protectedPassword = '262456';
+  Map<String, dynamic> _protectedSettings = {};
+  List<String> _customPersonalities = [];
+  Map<String, dynamic> _advancedConfig = {};
+  
   // Getters
   bool get isDarkMode => _isDarkMode;
   bool get isFirstLaunch => _isFirstLaunch;
@@ -41,8 +52,16 @@ class AppState extends ChangeNotifier {
   int get interactionCount => _interactionCount;
   List<String> get conversationHistory => List.unmodifiable(_conversationHistory);
   
+  // Getters del Modo Protegido
+  bool get isProtectedMode => _isProtectedMode;
+  bool get isAuthenticated => _isAuthenticated;
+  Map<String, dynamic> get protectedSettings => Map.unmodifiable(_protectedSettings);
+  List<String> get customPersonalities => List.unmodifiable(_customPersonalities);
+  Map<String, dynamic> get advancedConfig => Map.unmodifiable(_advancedConfig);
+  
   AppState() {
     _loadSettings();
+    _loadProtectedSettings();
   }
   
   Future<void> _loadSettings() async {
@@ -71,6 +90,32 @@ class AppState extends ChangeNotifier {
     }
   }
   
+  Future<void> _loadProtectedSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      _isProtectedMode = prefs.getBool('isProtectedMode') ?? false;
+      _isAuthenticated = prefs.getBool('isAuthenticated') ?? false;
+      
+      final protectedSettingsStr = prefs.getString('protectedSettings');
+      if (protectedSettingsStr != null) {
+        _protectedSettings = json.decode(protectedSettingsStr);
+      }
+      
+      final customPersonalitiesStr = prefs.getStringList('customPersonalities') ?? [];
+      _customPersonalities = customPersonalitiesStr;
+      
+      final advancedConfigStr = prefs.getString('advancedConfig');
+      if (advancedConfigStr != null) {
+        _advancedConfig = json.decode(advancedConfigStr);
+      }
+      
+      notifyListeners();
+    } catch (e) {
+      _logger.e('Error al cargar configuraciones protegidas: $e');
+    }
+  }
+  
   Future<void> _saveSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -93,7 +138,137 @@ class AppState extends ChangeNotifier {
     }
   }
   
-  // Métodos de Configuración
+  Future<void> _saveProtectedSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      await prefs.setBool('isProtectedMode', _isProtectedMode);
+      await prefs.setBool('isAuthenticated', _isAuthenticated);
+      await prefs.setString('protectedSettings', json.encode(_protectedSettings));
+      await prefs.setStringList('customPersonalities', _customPersonalities);
+      await prefs.setString('advancedConfig', json.encode(_advancedConfig));
+    } catch (e) {
+      _logger.e('Error al guardar configuraciones protegidas: $e');
+    }
+  }
+  
+  // Métodos de Autenticación del Modo Protegido
+  bool authenticateProtectedMode(String password) {
+    if (password == _protectedPassword) {
+      _isAuthenticated = true;
+      _isProtectedMode = true;
+      _saveProtectedSettings();
+      notifyListeners();
+      return true;
+    }
+    return false;
+  }
+  
+  void logoutProtectedMode() {
+    _isAuthenticated = false;
+    _saveProtectedSettings();
+    notifyListeners();
+  }
+  
+  void toggleProtectedMode() {
+    if (_isAuthenticated) {
+      _isProtectedMode = !_isProtectedMode;
+      _saveProtectedSettings();
+      notifyListeners();
+    }
+  }
+  
+  // Métodos de Auto-Actualización del Modo Protegido
+  Future<void> updateProtectedSettings(Map<String, dynamic> newSettings) async {
+    if (!_isAuthenticated) return;
+    
+    _protectedSettings.addAll(newSettings);
+    await _saveProtectedSettings();
+    notifyListeners();
+  }
+  
+  Future<void> addCustomPersonality(String name, Map<String, dynamic> config) async {
+    if (!_isAuthenticated) return;
+    
+    _customPersonalities.add(name);
+    _protectedSettings['personalities'] = _protectedSettings['personalities'] ?? {};
+    _protectedSettings['personalities'][name] = config;
+    await _saveProtectedSettings();
+    notifyListeners();
+  }
+  
+  Future<void> removeCustomPersonality(String name) async {
+    if (!_isAuthenticated) return;
+    
+    _customPersonalities.remove(name);
+    _protectedSettings['personalities']?.remove(name);
+    await _saveProtectedSettings();
+    notifyListeners();
+  }
+  
+  Future<void> updateAdvancedConfig(Map<String, dynamic> config) async {
+    if (!_isAuthenticated) return;
+    
+    _advancedConfig.addAll(config);
+    await _saveProtectedSettings();
+    notifyListeners();
+  }
+  
+  // Método de Auto-Actualización Completa
+  Future<void> performAutoUpdate(Map<String, dynamic> updateData) async {
+    if (!_isAuthenticated) return;
+    
+    try {
+      // Actualizar configuraciones protegidas
+      if (updateData['protectedSettings'] != null) {
+        await updateProtectedSettings(updateData['protectedSettings']);
+      }
+      
+      // Actualizar personalidades personalizadas
+      if (updateData['customPersonalities'] != null) {
+        for (final personality in updateData['customPersonalities']) {
+          await addCustomPersonality(
+            personality['name'], 
+            personality['config']
+          );
+        }
+      }
+      
+      // Actualizar configuración avanzada
+      if (updateData['advancedConfig'] != null) {
+        await updateAdvancedConfig(updateData['advancedConfig']);
+      }
+      
+      // Actualizar archivos de configuración
+      if (updateData['configFiles'] != null) {
+        await _updateConfigFiles(updateData['configFiles']);
+      }
+      
+      _logger.i('Auto-actualización completada exitosamente');
+    } catch (e) {
+      _logger.e('Error durante la auto-actualización: $e');
+    }
+  }
+  
+  Future<void> _updateConfigFiles(Map<String, dynamic> configFiles) async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final configDir = Directory('${appDir.path}/config');
+      
+      if (!await configDir.exists()) {
+        await configDir.create(recursive: true);
+      }
+      
+      for (final entry in configFiles.entries) {
+        final file = File('${configDir.path}/${entry.key}');
+        await file.writeAsString(entry.value.toString());
+      }
+    } catch (e) {
+      _logger.e('Error al actualizar archivos de configuración: $e');
+    }
+  }
+  
+  // Métodos de Configuración (existentes)
   Future<void> setDarkMode(bool value) async {
     _isDarkMode = value;
     await _saveSettings();
@@ -183,39 +358,48 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
   
-  // Presets de Personalidad
-  Map<String, Map<String, dynamic>> get personalityPresets => {
-    'amigable': {
-      'name': 'Luna',
-      'description': 'Compañera cálida y cariñosa',
-      'voice_pitch': 1.0,
-      'speech_style': 'casual',
-    },
-    'profesional': {
-      'name': 'Athena',
-      'description': 'Asistente inteligente y enfocada',
-      'voice_pitch': 0.9,
-      'speech_style': 'formal',
-    },
-    'juguetona': {
-      'name': 'Nova',
-      'description': 'Compañera energética y divertida',
-      'voice_pitch': 1.1,
-      'speech_style': 'entusiasta',
-    },
-    'misteriosa': {
-      'name': 'Shadow',
-      'description': 'Compañera misteriosa e intrigante',
-      'voice_pitch': 0.8,
-      'speech_style': 'susurrada',
-    },
-    'seductora': {
-      'name': 'Venus',
-      'description': 'Compañera seductora y atractiva',
-      'voice_pitch': 1.2,
-      'speech_style': 'sensual',
-    },
-  };
+  // Presets de Personalidad (actualizados)
+  Map<String, Map<String, dynamic>> get personalityPresets {
+    final basePresets = {
+      'amigable': {
+        'name': 'Luna',
+        'description': 'Compañera cálida y cariñosa',
+        'voice_pitch': 1.0,
+        'speech_style': 'casual',
+      },
+      'profesional': {
+        'name': 'Athena',
+        'description': 'Asistente inteligente y enfocada',
+        'voice_pitch': 0.9,
+        'speech_style': 'formal',
+      },
+      'juguetona': {
+        'name': 'Nova',
+        'description': 'Compañera energética y divertida',
+        'voice_pitch': 1.1,
+        'speech_style': 'entusiasta',
+      },
+      'misteriosa': {
+        'name': 'Shadow',
+        'description': 'Compañera misteriosa e intrigante',
+        'voice_pitch': 0.8,
+        'speech_style': 'susurrada',
+      },
+      'seductora': {
+        'name': 'Venus',
+        'description': 'Compañera seductora y atractiva',
+        'voice_pitch': 1.2,
+        'speech_style': 'sensual',
+      },
+    };
+    
+    // Agregar personalidades personalizadas si están autenticados
+    if (_isAuthenticated && _protectedSettings['personalities'] != null) {
+      basePresets.addAll(_protectedSettings['personalities']);
+    }
+    
+    return basePresets;
+  }
   
   Future<void> applyPersonalityPreset(String personality) async {
     final preset = personalityPresets[personality];
