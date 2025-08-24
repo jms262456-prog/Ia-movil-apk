@@ -26,9 +26,11 @@ class _CompanionAvatarState extends State<CompanionAvatar>
   late AnimationController _pulseController;
   late AnimationController _breathingController;
   late AnimationController _hairController;
+  late AnimationController _blinkController;
   late Animation<double> _pulseAnimation;
   late Animation<double> _breathingAnimation;
   late Animation<double> _hairAnimation;
+  late Animation<double> _blinkAnimation;
 
   @override
   void initState() {
@@ -49,6 +51,11 @@ class _CompanionAvatarState extends State<CompanionAvatar>
       vsync: this,
     );
     
+    _blinkController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
@@ -61,6 +68,10 @@ class _CompanionAvatarState extends State<CompanionAvatar>
       CurvedAnimation(parent: _hairController, curve: Curves.easeInOut),
     );
     
+    _blinkAnimation = Tween<double>(begin: 1.0, end: 0.1).animate(
+      CurvedAnimation(parent: _blinkController, curve: Curves.easeInOut),
+    );
+    
     _startAnimations();
   }
 
@@ -68,9 +79,24 @@ class _CompanionAvatarState extends State<CompanionAvatar>
     _breathingController.repeat(reverse: true);
     _hairController.repeat(reverse: true);
     
+    // Parpadear cada 3-5 segundos
+    _scheduleBlink();
+    
     if (widget.isSpeaking) {
       _pulseController.repeat(reverse: true);
     }
+  }
+
+  void _scheduleBlink() {
+    Future.delayed(Duration(milliseconds: 3000 + (DateTime.now().millisecondsSinceEpoch % 2000)), () {
+      if (mounted) {
+        _blinkController.forward().then((_) {
+          _blinkController.reverse().then((_) {
+            _scheduleBlink();
+          });
+        });
+      }
+    });
   }
 
   @override
@@ -92,6 +118,7 @@ class _CompanionAvatarState extends State<CompanionAvatar>
     _pulseController.dispose();
     _breathingController.dispose();
     _hairController.dispose();
+    _blinkController.dispose();
     super.dispose();
   }
 
@@ -105,7 +132,7 @@ class _CompanionAvatarState extends State<CompanionAvatar>
         return GestureDetector(
           onTap: widget.onTap,
           child: AnimatedBuilder(
-            animation: Listenable.merge([_pulseAnimation, _breathingAnimation, _hairAnimation]),
+            animation: Listenable.merge([_pulseAnimation, _breathingAnimation, _hairAnimation, _blinkAnimation]),
             builder: (context, child) {
               return Transform.scale(
                 scale: widget.isSpeaking 
@@ -127,8 +154,8 @@ class _CompanionAvatarState extends State<CompanionAvatar>
                   ),
                   child: Stack(
                     children: [
-                      // Avatar principal
-                      _buildAvatarFace(avatarSettings, isUnrestricted),
+                      // Avatar anime principal
+                      _buildAnimeAvatar(avatarSettings, isUnrestricted),
                       
                       // Efectos de cabello
                       if (avatarSettings['hair'] == 'long')
@@ -155,7 +182,7 @@ class _CompanionAvatarState extends State<CompanionAvatar>
     );
   }
 
-  Widget _buildAvatarFace(Map<String, dynamic> avatarSettings, bool isUnrestricted) {
+  Widget _buildAnimeAvatar(Map<String, dynamic> avatarSettings, bool isUnrestricted) {
     final style = avatarSettings['style'] ?? 'default';
     final expression = avatarSettings['expression'] ?? 'friendly';
     
@@ -165,10 +192,16 @@ class _CompanionAvatarState extends State<CompanionAvatar>
         color: Colors.transparent,
       ),
       child: Center(
-        child: Icon(
-          _getAvatarIcon(style, expression, isUnrestricted),
-          size: widget.size * 0.6,
-          color: Colors.white,
+        child: CustomPaint(
+          size: Size(widget.size, widget.size),
+          painter: AnimeAvatarPainter(
+            style: style,
+            expression: expression,
+            isUnrestricted: isUnrestricted,
+            personality: widget.personality,
+            blinkValue: _blinkAnimation.value,
+            hairValue: _hairAnimation.value,
+          ),
         ),
       ),
     );
@@ -329,21 +362,6 @@ class _CompanionAvatarState extends State<CompanionAvatar>
     }
   }
 
-  IconData _getAvatarIcon(String style, String expression, bool isUnrestricted) {
-    if (isUnrestricted) {
-      return Icons.favorite;
-    }
-    
-    switch (style) {
-      case 'sexy':
-        return Icons.favorite_border;
-      case 'seductive':
-        return Icons.favorite;
-      default:
-        return _getPersonalityIcon(widget.personality);
-    }
-  }
-
   LinearGradient _getPersonalityGradient(String personality) {
     switch (personality) {
       case 'amigable':
@@ -401,21 +419,328 @@ class _CompanionAvatarState extends State<CompanionAvatar>
         return const Color(0xFF9E9E9E);
     }
   }
+}
 
-  IconData _getPersonalityIcon(String personality) {
-    switch (personality) {
-      case 'amigable':
-        return Icons.favorite;
-      case 'profesional':
-        return Icons.psychology;
-      case 'juguetona':
-        return Icons.celebration;
-      case 'misteriosa':
-        return Icons.auto_awesome;
-      case 'seductora':
-        return Icons.favorite_border;
-      default:
-        return Icons.person;
+class AnimeAvatarPainter extends CustomPainter {
+  final String style;
+  final String expression;
+  final bool isUnrestricted;
+  final String personality;
+  final double blinkValue;
+  final double hairValue;
+
+  AnimeAvatarPainter({
+    required this.style,
+    required this.expression,
+    required this.isUnrestricted,
+    required this.personality,
+    required this.blinkValue,
+    required this.hairValue,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+
+    // Color de piel
+    final skinColor = Color(0xFFFFE4C4);
+    
+    // Color de cabello
+    final hairColor = _getHairColor();
+    
+    // Color de ojos
+    final eyeColor = _getEyeColor();
+
+    // Dibujar cabello
+    _drawHair(canvas, center, radius, hairColor);
+    
+    // Dibujar cara
+    _drawFace(canvas, center, radius, skinColor);
+    
+    // Dibujar ojos
+    _drawEyes(canvas, center, radius, eyeColor);
+    
+    // Dibujar boca
+    _drawMouth(canvas, center, radius);
+    
+    // Dibujar detalles faciales
+    _drawFacialDetails(canvas, center, radius);
+  }
+
+  void _drawHair(Canvas canvas, Offset center, double radius, Color hairColor) {
+    final hairPaint = Paint()
+      ..color = hairColor
+      ..style = PaintingStyle.fill;
+
+    // Cabello principal
+    final hairPath = Path();
+    hairPath.moveTo(center.dx - radius * 0.8, center.dy - radius * 0.3);
+    hairPath.quadraticBezierTo(
+      center.dx - radius * 0.9, center.dy - radius * 0.8,
+      center.dx, center.dy - radius * 0.9
+    );
+    hairPath.quadraticBezierTo(
+      center.dx + radius * 0.9, center.dy - radius * 0.8,
+      center.dx + radius * 0.8, center.dy - radius * 0.3
+    );
+    hairPath.lineTo(center.dx + radius * 0.7, center.dy + radius * 0.2);
+    hairPath.quadraticBezierTo(
+      center.dx + radius * 0.5, center.dy + radius * 0.4,
+      center.dx, center.dy + radius * 0.3
+    );
+    hairPath.quadraticBezierTo(
+      center.dx - radius * 0.5, center.dy + radius * 0.4,
+      center.dx - radius * 0.7, center.dy + radius * 0.2
+    );
+    hairPath.close();
+    
+    canvas.drawPath(hairPath, hairPaint);
+
+    // Mechas de cabello
+    _drawHairStrands(canvas, center, radius, hairColor);
+  }
+
+  void _drawHairStrands(Canvas canvas, Offset center, double radius, Color hairColor) {
+    final hairPaint = Paint()
+      ..color = hairColor
+      ..style = PaintingStyle.fill;
+
+    // Mechas laterales
+    for (int i = 0; i < 3; i++) {
+      final strandPath = Path();
+      final xOffset = (i - 1) * radius * 0.2;
+      final yOffset = -radius * 0.1 + i * radius * 0.05;
+      
+      strandPath.moveTo(center.dx + xOffset, center.dy + yOffset);
+      strandPath.quadraticBezierTo(
+        center.dx + xOffset + radius * 0.1, center.dy + yOffset + radius * 0.2,
+        center.dx + xOffset, center.dy + yOffset + radius * 0.4
+      );
+      strandPath.quadraticBezierTo(
+        center.dx + xOffset - radius * 0.05, center.dy + yOffset + radius * 0.3,
+        center.dx + xOffset, center.dy + yOffset + radius * 0.2
+      );
+      strandPath.close();
+      
+      canvas.drawPath(strandPath, hairPaint);
     }
   }
+
+  void _drawFace(Canvas canvas, Offset center, double radius, Color skinColor) {
+    final facePaint = Paint()
+      ..color = skinColor
+      ..style = PaintingStyle.fill;
+
+    // Cara ovalada
+    final faceRect = Rect.fromCenter(
+      center: center,
+      width: radius * 1.6,
+      height: radius * 2.0,
+    );
+    
+    canvas.drawOval(faceRect, facePaint);
+
+    // Mejillas rosadas
+    final cheekPaint = Paint()
+      ..color = Color(0xFFFFB6C1).withOpacity(0.3)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(
+      Offset(center.dx - radius * 0.4, center.dy + radius * 0.1),
+      radius * 0.15,
+      cheekPaint,
+    );
+    
+    canvas.drawCircle(
+      Offset(center.dx + radius * 0.4, center.dy + radius * 0.1),
+      radius * 0.15,
+      cheekPaint,
+    );
+  }
+
+  void _drawEyes(Canvas canvas, Offset center, double radius, Color eyeColor) {
+    final eyePaint = Paint()
+      ..color = eyeColor
+      ..style = PaintingStyle.fill;
+
+    final pupilPaint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.fill;
+
+    final highlightPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    // Ojo izquierdo
+    final leftEyeCenter = Offset(center.dx - radius * 0.25, center.dy - radius * 0.1);
+    canvas.drawCircle(leftEyeCenter, radius * 0.12, eyePaint);
+    
+    // Pupila izquierda
+    final leftPupilCenter = Offset(
+      leftEyeCenter.dx + radius * 0.02,
+      leftEyeCenter.dy + radius * 0.02
+    );
+    canvas.drawCircle(leftPupilCenter, radius * 0.06, pupilPaint);
+    
+    // Brillo ojo izquierdo
+    canvas.drawCircle(
+      Offset(leftEyeCenter.dx - radius * 0.04, leftEyeCenter.dy - radius * 0.04),
+      radius * 0.03,
+      highlightPaint,
+    );
+
+    // Ojo derecho
+    final rightEyeCenter = Offset(center.dx + radius * 0.25, center.dy - radius * 0.1);
+    canvas.drawCircle(rightEyeCenter, radius * 0.12, eyePaint);
+    
+    // Pupila derecha
+    final rightPupilCenter = Offset(
+      rightEyeCenter.dx + radius * 0.02,
+      rightEyeCenter.dy + radius * 0.02
+    );
+    canvas.drawCircle(rightPupilCenter, radius * 0.06, pupilPaint);
+    
+    // Brillo ojo derecho
+    canvas.drawCircle(
+      Offset(rightEyeCenter.dx - radius * 0.04, rightEyeCenter.dy - radius * 0.04),
+      radius * 0.03,
+      highlightPaint,
+    );
+
+    // Párpados (para el parpadeo)
+    final eyelidPaint = Paint()
+      ..color = Color(0xFFFFE4C4)
+      ..style = PaintingStyle.fill;
+
+    final eyelidHeight = radius * 0.12 * blinkValue;
+    
+    // Párpado izquierdo
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: leftEyeCenter,
+        width: radius * 0.24,
+        height: eyelidHeight,
+      ),
+      eyelidPaint,
+    );
+    
+    // Párpado derecho
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: rightEyeCenter,
+        width: radius * 0.24,
+        height: eyelidHeight,
+      ),
+      eyelidPaint,
+    );
+  }
+
+  void _drawMouth(Canvas canvas, Offset center, double radius) {
+    final mouthPaint = Paint()
+      ..color = Color(0xFFFF69B4)
+      ..style = PaintingStyle.fill
+      ..strokeWidth = 2;
+
+    // Boca según la expresión
+    switch (expression) {
+      case 'friendly':
+        // Sonrisa suave
+        final smilePath = Path();
+        smilePath.moveTo(center.dx - radius * 0.2, center.dy + radius * 0.2);
+        smilePath.quadraticBezierTo(
+          center.dx, center.dy + radius * 0.3,
+          center.dx + radius * 0.2, center.dy + radius * 0.2
+        );
+        canvas.drawPath(smilePath, mouthPaint);
+        break;
+      case 'seductive':
+        // Sonrisa seductora
+        final seductivePath = Path();
+        seductivePath.moveTo(center.dx - radius * 0.15, center.dy + radius * 0.15);
+        seductivePath.quadraticBezierTo(
+          center.dx, center.dy + radius * 0.25,
+          center.dx + radius * 0.15, center.dy + radius * 0.15
+        );
+        canvas.drawPath(seductivePath, mouthPaint);
+        break;
+      default:
+        // Boca neutral
+        canvas.drawLine(
+          Offset(center.dx - radius * 0.15, center.dy + radius * 0.2),
+          Offset(center.dx + radius * 0.15, center.dy + radius * 0.2),
+          mouthPaint,
+        );
+    }
+  }
+
+  void _drawFacialDetails(Canvas canvas, Offset center, double radius) {
+    // Nariz
+    final nosePaint = Paint()
+      ..color = Color(0xFFFFE4C4).withOpacity(0.5)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(
+      Offset(center.dx, center.dy + radius * 0.05),
+      radius * 0.03,
+      nosePaint,
+    );
+
+    // Cejas
+    final eyebrowPaint = Paint()
+      ..color = _getHairColor()
+      ..style = PaintingStyle.fill
+      ..strokeWidth = 3;
+
+    // Ceja izquierda
+    canvas.drawLine(
+      Offset(center.dx - radius * 0.35, center.dy - radius * 0.25),
+      Offset(center.dx - radius * 0.15, center.dy - radius * 0.2),
+      eyebrowPaint,
+    );
+    
+    // Ceja derecha
+    canvas.drawLine(
+      Offset(center.dx + radius * 0.15, center.dy - radius * 0.2),
+      Offset(center.dx + radius * 0.35, center.dy - radius * 0.25),
+      eyebrowPaint,
+    );
+  }
+
+  Color _getHairColor() {
+    switch (personality) {
+      case 'seductora':
+        return Color(0xFF8B4513); // Marrón oscuro
+      case 'amigable':
+        return Color(0xFFD2691E); // Marrón cálido
+      case 'profesional':
+        return Color(0xFF2F4F4F); // Gris oscuro
+      case 'juguetona':
+        return Color(0xFFFF69B4); // Rosa
+      case 'misteriosa':
+        return Color(0xFF4B0082); // Púrpura oscuro
+      default:
+        return Color(0xFF8B4513); // Marrón por defecto
+    }
+  }
+
+  Color _getEyeColor() {
+    switch (personality) {
+      case 'seductora':
+        return Color(0xFF4169E1); // Azul real
+      case 'amigable':
+        return Color(0xFF32CD32); // Verde lima
+      case 'profesional':
+        return Color(0xFF1E90FF); // Azul dodger
+      case 'juguetona':
+        return Color(0xFFFF6347); // Tomate
+      case 'misteriosa':
+        return Color(0xFF9370DB); // Púrpura medio
+      default:
+        return Color(0xFF4169E1); // Azul por defecto
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
