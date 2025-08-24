@@ -1,0 +1,90 @@
+name: Build Flutter App
+
+on:
+  push:
+    branches: [ main, master, develop, build-workflow ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '11'
+        
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.3'
+        channel: 'stable'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Verify dependencies
+      run: flutter doctor
+      
+    - name: Generate Keystore
+      run: |
+        keytool -genkey -v -keystore android/app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload -storepass android -keypass android -dname "CN=Virtual Companion, OU=Development, O=VirtualCompanion, L=City, S=State, C=US"
+        
+    - name: Build APK
+      run: |
+        flutter build apk --release
+        ls -la build/app/outputs/flutter-apk/
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: virtual-companion-apk
+        path: build/app/outputs/flutter-apk/app-release.apk
+        
+    - name: Create Release
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: build/app/outputs/flutter-apk/app-release.apk
+        tag_name: v1.0.0
+        name: Virtual Companion v1.0.0
+        body: |
+          # Compañera Virtual v1.0.0
+          
+          ## 🎭 Características
+          - Avatar anime 3D sexy y atractivo
+          - Interacción por voz y cámara
+          - 5 personalidades diferentes
+          - Modo protegido con contraseña
+          - Auto-actualización sin restricciones
+          
+          ## 🔐 Modo Protegido
+          - Contraseña: `262456`
+          - Acceso a configuraciones avanzadas
+          - Personalización sin límites
+          
+          ## 📱 Instalación
+          1. Descarga el APK
+          2. Permite instalación de fuentes desconocidas
+          3. Instala la aplicación
+          4. Concede permisos de cámara y micrófono
+          
+          ## 🚀 Funcionalidades
+          - **Venus (Seductora)**: Avatar sexy con gradientes rosa-púrpura
+          - **Luna (Amigable)**: Compañera cálida y acogedora
+          - **Athena (Profesional)**: Asistente elegante y sofisticada
+          - **Nova (Juguetona)**: Energética y divertida
+          - **Shadow (Misteriosa)**: Enigmática e intrigante
+          
+          ¡Disfruta de tu compañera virtual! 🌟
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
