@@ -16,13 +16,13 @@ import 'utils/theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Set preferred orientations
+  // Configurar orientaciones preferidas
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
   
-  // Initialize logger
+  // Inicializar logger
   Logger.level = Level.debug;
   
   runApp(const VirtualCompanionApp());
@@ -41,7 +41,7 @@ class VirtualCompanionApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AIProvider()),
       ],
       child: MaterialApp(
-        title: 'Virtual Companion',
+        title: 'Compañera Virtual',
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
@@ -87,7 +87,7 @@ class _PermissionWrapperState extends State<PermissionWrapper> {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('Initializing Virtual Companion...'),
+              Text('Inicializando Compañera Virtual...'),
             ],
           ),
         ),
@@ -109,7 +109,7 @@ class _PermissionWrapperState extends State<PermissionWrapper> {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  'Permissions Required',
+                  'Permisos Requeridos',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -117,14 +117,14 @@ class _PermissionWrapperState extends State<PermissionWrapper> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'This app needs camera and microphone permissions to provide the full interactive experience.',
+                  'Esta aplicación necesita permisos de cámara y micrófono para proporcionar la experiencia interactiva completa.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: _checkPermissions,
-                  child: const Text('Grant Permissions'),
+                  child: const Text('Conceder Permisos'),
                 ),
               ],
             ),

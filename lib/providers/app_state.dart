@@ -5,22 +5,22 @@ import 'package:logger/logger.dart';
 class AppState extends ChangeNotifier {
   final Logger _logger = Logger();
   
-  // App Settings
+  // Configuración de la Aplicación
   bool _isDarkMode = false;
   bool _isFirstLaunch = true;
   String _userName = '';
   String _companionName = 'Luna';
-  String _companionPersonality = 'friendly';
+  String _companionPersonality = 'amigable';
   bool _autoUpdateEnabled = true;
   
-  // Interaction Settings
+  // Configuración de Interacción
   bool _voiceEnabled = true;
   bool _cameraEnabled = true;
   bool _aiProcessingEnabled = true;
   double _voiceVolume = 0.8;
   double _speechRate = 0.5;
   
-  // Session Data
+  // Datos de Sesión
   DateTime? _lastInteraction;
   int _interactionCount = 0;
   List<String> _conversationHistory = [];
@@ -53,7 +53,7 @@ class AppState extends ChangeNotifier {
       _isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
       _userName = prefs.getString('userName') ?? '';
       _companionName = prefs.getString('companionName') ?? 'Luna';
-      _companionPersonality = prefs.getString('companionPersonality') ?? 'friendly';
+      _companionPersonality = prefs.getString('companionPersonality') ?? 'amigable';
       _autoUpdateEnabled = prefs.getBool('autoUpdateEnabled') ?? true;
       _voiceEnabled = prefs.getBool('voiceEnabled') ?? true;
       _cameraEnabled = prefs.getBool('cameraEnabled') ?? true;
@@ -67,7 +67,7 @@ class AppState extends ChangeNotifier {
       
       notifyListeners();
     } catch (e) {
-      _logger.e('Error loading settings: $e');
+      _logger.e('Error al cargar configuraciones: $e');
     }
   }
   
@@ -89,11 +89,11 @@ class AppState extends ChangeNotifier {
       await prefs.setInt('interactionCount', _interactionCount);
       await prefs.setStringList('conversationHistory', _conversationHistory);
     } catch (e) {
-      _logger.e('Error saving settings: $e');
+      _logger.e('Error al guardar configuraciones: $e');
     }
   }
   
-  // Settings Methods
+  // Métodos de Configuración
   Future<void> setDarkMode(bool value) async {
     _isDarkMode = value;
     await _saveSettings();
@@ -160,7 +160,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
   
-  // Interaction Methods
+  // Métodos de Interacción
   void addInteraction() {
     _interactionCount++;
     _lastInteraction = DateTime.now();
@@ -183,31 +183,37 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
   
-  // Personality Presets
+  // Presets de Personalidad
   Map<String, Map<String, dynamic>> get personalityPresets => {
-    'friendly': {
+    'amigable': {
       'name': 'Luna',
-      'description': 'Warm and caring companion',
+      'description': 'Compañera cálida y cariñosa',
       'voice_pitch': 1.0,
       'speech_style': 'casual',
     },
-    'professional': {
+    'profesional': {
       'name': 'Athena',
-      'description': 'Intelligent and focused assistant',
+      'description': 'Asistente inteligente y enfocada',
       'voice_pitch': 0.9,
       'speech_style': 'formal',
     },
-    'playful': {
+    'juguetona': {
       'name': 'Nova',
-      'description': 'Energetic and fun companion',
+      'description': 'Compañera energética y divertida',
       'voice_pitch': 1.1,
-      'speech_style': 'enthusiastic',
+      'speech_style': 'entusiasta',
     },
-    'mysterious': {
+    'misteriosa': {
       'name': 'Shadow',
-      'description': 'Mysterious and intriguing companion',
+      'description': 'Compañera misteriosa e intrigante',
       'voice_pitch': 0.8,
-      'speech_style': 'whispered',
+      'speech_style': 'susurrada',
+    },
+    'seductora': {
+      'name': 'Venus',
+      'description': 'Compañera seductora y atractiva',
+      'voice_pitch': 1.2,
+      'speech_style': 'sensual',
     },
   };
   
