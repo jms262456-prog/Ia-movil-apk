@@ -6,6 +6,7 @@ import '../providers/ai_provider.dart';
 import '../utils/theme.dart';
 import 'protected_mode_auth.dart';
 import 'protected_mode_panel.dart';
+import 'avatar_preview.dart';
 
 class ControlPanel extends StatelessWidget {
   final VoidCallback onClose;
@@ -510,15 +511,32 @@ class ControlPanel extends StatelessWidget {
                   const SizedBox(height: 16),
                 ],
                 
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // TODO: Implementar exportar datos
-                    },
-                    child: const Text('Exportar Datos'),
+                                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AvatarPreview(),
+                          ),
+                        );
+                      },
+                      child: const Text('Preview del Avatar'),
+                    ),
                   ),
-                ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // TODO: Implementar exportar datos
+                      },
+                      child: const Text('Exportar Datos'),
+                    ),
+                  ),
                 
                 const SizedBox(height: 8),
                 
