@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:logger/logger.dart';
 
 import 'providers/app_state.dart';
 import 'providers/camera_provider.dart';
@@ -21,9 +20,6 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  
-  // Inicializar logger
-  Logger.level = Level.debug;
   
   runApp(const VirtualCompanionApp());
 }
@@ -117,13 +113,15 @@ class _PermissionWrapperState extends State<PermissionWrapper> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Esta aplicación necesita permisos de cámara y micrófono para proporcionar la experiencia interactiva completa.',
+                  'La aplicación necesita acceso a la cámara y micrófono para funcionar correctamente.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: _checkPermissions,
+                  onPressed: () async {
+                    await _checkPermissions();
+                  },
                   child: const Text('Conceder Permisos'),
                 ),
               ],
