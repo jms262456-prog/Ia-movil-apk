@@ -178,6 +178,14 @@ class AppState extends ChangeNotifier {
     }
   }
   
+  void loginProtectedMode() {
+    if (_isAuthenticated) {
+      _isProtectedMode = true;
+      _saveProtectedSettings();
+      notifyListeners();
+    }
+  }
+  
   // Métodos de Auto-Actualización del Modo Protegido
   Future<void> updateProtectedSettings(Map<String, dynamic> newSettings) async {
     if (!_isAuthenticated) return;
@@ -248,6 +256,133 @@ class AppState extends ChangeNotifier {
     } catch (e) {
       _logger.e('Error durante la auto-actualización: $e');
     }
+  }
+  
+  // Método Simplificado de Auto-Actualización
+  Future<void> simpleUpdate(String updateType, Map<String, dynamic> data) async {
+    if (!_isAuthenticated) return;
+    
+    try {
+      switch (updateType) {
+        case 'personality':
+          if (data['name'] != null && data['config'] != null) {
+            await addCustomPersonality(data['name'], data['config']);
+          }
+          break;
+        case 'settings':
+          await updateProtectedSettings(data);
+          break;
+        case 'avatar':
+          await updateAvatarSettings(data);
+          break;
+        case 'responses':
+          await updateCustomResponses(data);
+          break;
+        case 'unrestricted':
+          await enableUnrestrictedMode(data);
+          break;
+      }
+      
+      _logger.i('Actualización simple completada: $updateType');
+    } catch (e) {
+      _logger.e('Error en actualización simple: $e');
+    }
+  }
+  
+  // Configuración del Avatar Sexy
+  Map<String, dynamic> _avatarSettings = {
+    'style': 'sexy',
+    'outfit': 'default',
+    'hair': 'long',
+    'accessories': [],
+    'pose': 'casual',
+    'expression': 'friendly',
+    'animation': 'gentle',
+  };
+  
+  Map<String, dynamic> get avatarSettings => Map.unmodifiable(_avatarSettings);
+  
+  Future<void> updateAvatarSettings(Map<String, dynamic> settings) async {
+    if (!_isAuthenticated) return;
+    
+    _avatarSettings.addAll(settings);
+    _protectedSettings['avatar'] = _avatarSettings;
+    await _saveProtectedSettings();
+    notifyListeners();
+  }
+  
+  // Respuestas Personalizadas Sin Restricciones
+  Map<String, List<String>> _customResponses = {};
+  
+  Map<String, List<String>> get customResponses => Map.unmodifiable(_customResponses);
+  
+  Future<void> updateCustomResponses(Map<String, dynamic> responses) async {
+    if (!_isAuthenticated) return;
+    
+    responses.forEach((key, value) {
+      if (value is List) {
+        _customResponses[key] = List<String>.from(value);
+      }
+    });
+    
+    _protectedSettings['customResponses'] = _customResponses;
+    await _saveProtectedSettings();
+    notifyListeners();
+  }
+  
+  // Modo Sin Restricciones
+  bool _unrestrictedMode = false;
+  
+  bool get unrestrictedMode => _unrestrictedMode;
+  
+  Future<void> enableUnrestrictedMode(Map<String, dynamic> config) async {
+    if (!_isAuthenticated) return;
+    
+    _unrestrictedMode = config['enabled'] ?? false;
+    _protectedSettings['unrestrictedMode'] = _unrestrictedMode;
+    _protectedSettings['unrestrictedConfig'] = config;
+    await _saveProtectedSettings();
+    notifyListeners();
+  }
+  
+  // Métodos Rápidos de Actualización
+  Future<void> quickUpdatePersonality(String name, String description, List<String> greetings, List<String> responses) async {
+    if (!_isAuthenticated) return;
+    
+    final config = {
+      'name': name,
+      'description': description,
+      'voice_pitch': 1.1,
+      'speech_style': 'sexy',
+      'responses': {
+        'greeting': greetings,
+        'custom': responses,
+      },
+      'avatar': {
+        'style': 'sexy',
+        'outfit': 'attractive',
+      }
+    };
+    
+    await addCustomPersonality(name, config);
+  }
+  
+  Future<void> quickEnableSexyMode() async {
+    if (!_isAuthenticated) return;
+    
+    await updateAvatarSettings({
+      'style': 'sexy',
+      'outfit': 'attractive',
+      'pose': 'seductive',
+      'expression': 'flirtatious',
+      'animation': 'smooth',
+    });
+    
+    await enableUnrestrictedMode({
+      'enabled': true,
+      'sexyMode': true,
+      'unrestrictedContent': true,
+    });
   }
   
   Future<void> _updateConfigFiles(Map<String, dynamic> configFiles) async {

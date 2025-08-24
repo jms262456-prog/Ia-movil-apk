@@ -126,8 +126,13 @@ class _ProtectedModePanelState extends State<ProtectedModePanel> {
                     
                     const SizedBox(height: 24),
                     
-                    // Auto-actualización
-                    _buildAutoUpdateSection(),
+                    // Botones rápidos
+                    _buildQuickActionsSection(),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Auto-actualización simplificada
+                    _buildSimpleUpdateSection(),
                     
                     const SizedBox(height: 24),
                     
@@ -138,11 +143,6 @@ class _ProtectedModePanelState extends State<ProtectedModePanel> {
                     
                     // Configuración avanzada
                     _buildAdvancedConfigSection(),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Configuraciones protegidas
-                    _buildProtectedSettingsSection(),
                   ],
                 ),
               ),
@@ -279,7 +279,114 @@ class _ProtectedModePanelState extends State<ProtectedModePanel> {
     );
   }
 
-  Widget _buildAutoUpdateSection() {
+  Widget _buildQuickActionsSection() {
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        return Card(
+          color: Colors.grey[900],
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.speed,
+                      color: Colors.yellow,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Acciones Rápidas',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 16),
+                
+                if (appState.isProtectedMode) ...[
+                  _buildQuickActionButton(
+                    'Desactivar Modo Protegido',
+                    Icons.lock_open,
+                    Colors.red,
+                    () {
+                      appState.logoutProtectedMode();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Modo Protegido desactivado'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    },
+                  ),
+                ] else ...[
+                  _buildQuickActionButton(
+                    'Activar Modo Protegido',
+                    Icons.lock,
+                    Colors.green,
+                    () {
+                      appState.loginProtectedMode();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Modo Protegido activado'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+                
+                const SizedBox(height: 12),
+                
+                _buildQuickActionButton(
+                  'Actualizar Configuraciones',
+                  Icons.system_update,
+                  Colors.blue,
+                  () {
+                    // This action is handled by the simple update section
+                  },
+                ),
+                
+                const SizedBox(height: 12),
+                
+                _buildQuickActionButton(
+                  'Agregar Personalidad',
+                  Icons.psychology,
+                  Colors.orange,
+                  () {
+                    // This action is handled by the custom personalities section
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickActionButton(String label, IconData icon, Color color, VoidCallback onPressed) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        icon: Icon(icon, color: Colors.white),
+        label: Text(label),
+      ),
+    );
+  }
+
+  Widget _buildSimpleUpdateSection() {
     return Card(
       color: Colors.grey[900],
       child: Padding(
@@ -296,7 +403,7 @@ class _ProtectedModePanelState extends State<ProtectedModePanel> {
                 ),
                 const SizedBox(width: 8),
                 const Text(
-                  'Auto-Actualización',
+                  'Auto-Actualización Simplificada',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
