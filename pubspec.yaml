@@ -1,0 +1,72 @@
+name: virtual_companion
+description: An interactive virtual companion with camera and voice interaction capabilities
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Camera and Media
+  camera: ^0.10.5+5
+  image: ^4.1.3
+  video_player: ^2.8.1
+  
+  # Voice and Audio
+  speech_to_text: ^6.6.0
+  flutter_tts: ^3.8.5
+  record: ^5.0.4
+  
+  # AI and ML
+  tflite_flutter: ^0.10.4
+  google_ml_kit: ^0.16.3
+  
+  # UI and Animation
+  cupertino_icons: ^1.0.2
+  flutter_animate: ^4.3.0
+  lottie: ^2.7.0
+  
+  # State Management
+  provider: ^6.1.1
+  riverpod: ^2.4.9
+  
+  # Networking and API
+  http: ^1.1.0
+  dio: ^5.3.2
+  
+  # Local Storage
+  shared_preferences: ^2.2.2
+  sqflite: ^2.3.0
+  path_provider: ^2.1.1
+  
+  # Permissions
+  permission_handler: ^11.0.1
+  
+  # Utilities
+  uuid: ^4.2.1
+  intl: ^0.18.1
+  logger: ^2.0.2+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/animations/
+    - assets/images/
+    - assets/audio/
+    - assets/models/
+  
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
